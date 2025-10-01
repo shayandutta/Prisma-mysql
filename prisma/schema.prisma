@@ -26,5 +26,7 @@ model Article {
   state ArticleState @default(DRAFT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("articles")
 }
 
