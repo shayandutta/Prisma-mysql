@@ -31,6 +31,13 @@ app.post("/users", async(req, res)=>{
     })
 })
 
+//raw sql query
+//fetching all the articles of a userId
+app.get('/users/:userId/articles', async(req, res)=>{
+    const result = await prisma.$queryRaw`SELECT * FROM articles INNER JOIN User On articles.userId=User.id WHERE articles.userId = ${req.params.userId}` //passing raw sql query
+    res.json(result);
+})
+
 // app.post("/articles", async (req, res) => {
 //   //   await prisma.article.create({
 //   //     data: req.body,
