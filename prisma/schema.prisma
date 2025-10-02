@@ -25,7 +25,31 @@ model Article {
   state ArticleState @default(DRAFT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  userId Int
+  user User @relation(fields: [userId], references: [id])
 
   @@map("articles")
 }
+
+// users and profiles
+// user may have a single profile and profile must be linked to a user
+// user may have one or multiple articles and article must be associated to a user
+
+model User{
+  id Int @id @default(autoincrement())
+  email String @unique
+  profile Profile?
+  articles Article[]
+}
+
+
+model Profile{
+  id Int @id @default(autoincrement())
+  name String
+  addr String
+  pno String
+  userId Int @unique //foreign key
+  user User @relation(fields: [userId], references: [id])
+}
+
 
