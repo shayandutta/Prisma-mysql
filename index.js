@@ -4,8 +4,29 @@ import { PrismaClient } from "@prisma/client";
 
 const app = express();
 
+
+//$extends -> to generated computed fields
+//computed fields -> to get a particular field as response from the already existing entities and not creating another table in the db
+//here full address is a computed field under profile section which is made of the name, addr and pno entities of the profile section
 const prisma = new PrismaClient({
   log: ["query"], //we can add configurations like this inside the prismaClient. This particular config will log the sql querry whenever a req is hit
+}).$extends({
+  result: {
+    profile: {
+      fullAddress: {
+        needs: {
+          name: true,
+          addr: true,
+          pno: true,
+        },
+        compute(profile) {
+          return `${profile.name}
+                    ${profile.addr}
+                    ${profile.pno}`;
+        },
+      },
+    },
+  },
 });
 
 app.use(bodyParser.json());
@@ -14,29 +35,53 @@ app.get("/", (req, res) => {
   res.send("home route working!");
 });
 
-
 //nested write operations(creating user with articles)
 
-app.post("/users", async(req, res)=>{
-    await prisma.user.create({
-        data: {
-            email: req.body.email,
-            articles:{
-                create: req.body.articles
-            }
-        }
-    })
-    res.json({
-        success : true
-    })
-})
+app.post("/users", async (req, res) => {
+  await prisma.user.create({
+    data: {
+      email: req.body.email,
+      articles: {
+        create: req.body.articles,
+      },
+    },
+  });
+  res.json({
+    success: true,
+  });
+});
+
+// Create a profile
+app.post("/profiles", async (req, res) => {
+  const profile = await prisma.profile.create({
+    data: {
+      name: req.body.name,
+      addr: req.body.addr,
+      pno: req.body.pno,
+      userId: req.body.userId,
+    },
+  });
+  res.json(profile);
+});
+
+app.get("/users", async (req, res) => {
+  const profile = await prisma.profile.findFirst();
+  res.json(profile);
+});
+
+// Get all profiles to see what data exists
+app.get("/profiles", async (req, res) => {
+  const profiles = await prisma.profile.findMany();
+  res.json(profiles);
+});
 
 //raw sql query
 //fetching all the articles of a userId
-app.get('/users/:userId/articles', async(req, res)=>{
-    const result = await prisma.$queryRaw`SELECT * FROM articles INNER JOIN User On articles.userId=User.id WHERE articles.userId = ${req.params.userId}` //passing raw sql query
-    res.json(result);
-})
+app.get("/users/:userId/articles", async (req, res) => {
+  const result =
+    await prisma.$queryRaw`SELECT * FROM articles INNER JOIN User On articles.userId=User.id WHERE articles.userId = ${req.params.userId}`; //passing raw sql query
+  res.json(result);
+});
 
 // app.post("/articles", async (req, res) => {
 //   //   await prisma.article.create({
@@ -67,7 +112,7 @@ app.get('/users/:userId/articles', async(req, res)=>{
 app.get("/articles", async (req, res) => {
   const articles = await prisma.article.findMany({
     skip: +req.query.skip,
-    take: +req.query.take
+    take: +req.query.take,
   });
   res.json(articles);
 });
@@ -116,15 +161,15 @@ app.get("/articles", async (req, res) => {
 // });
 
 //delete an article
-app.delete("/articles/:id", async(req, res)=>{
-    const article = await prisma.article.delete({
-        where:{
-            id : +req.params.id
-        }
-    })
-    res.json(article)
-    //prisma.article.deleteMany({}) //->dangerous operation, as it will empty the entire table(all columns will get deleted)
-})
+app.delete("/articles/:id", async (req, res) => {
+  const article = await prisma.article.delete({
+    where: {
+      id: +req.params.id,
+    },
+  });
+  res.json(article);
+  //prisma.article.deleteMany({}) //->dangerous operation, as it will empty the entire table(all columns will get deleted)
+});
 
 app.listen(5050, () => {
   console.log("app listening on port 5050");
