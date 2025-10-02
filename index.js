@@ -54,9 +54,21 @@ app.get('/users/:userId/articles', async(req, res)=>{
 //   });
 // });
 
-//1. retrieve all articles
+//1. retrieve all articles(paginated)
+//pagination:    1. Skip     2. Take
+//limit offset pagination
+//skip ->  how many columns to skip from top
+//take -> how many columns to take per page
+//for first page skip = 0, second page skip=5
+//fot all pages take = 5.
+//http://localhost:5050/articles?skip=0&take=2  -> page1
+//http://localhost:5050/articles?skip=2&take=2  -> page2
+//http://localhost:5050/articles?skip=4&take=2  -> page3
 app.get("/articles", async (req, res) => {
-  const articles = await prisma.article.findMany();
+  const articles = await prisma.article.findMany({
+    skip: +req.query.skip,
+    take: +req.query.take
+  });
   res.json(articles);
 });
 
